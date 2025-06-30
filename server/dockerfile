@@ -1,0 +1,21 @@
+# Use a minimal Python base image
+FROM python:3.10-slim
+
+# Install dependencies (like git-lfs and ffmpeg)
+RUN apt-get update && apt-get install -y git git-lfs ffmpeg && \
+    git lfs install
+
+# Set working directory
+WORKDIR /app
+
+# Copy all files into the container
+COPY . .
+
+# Install Python requirements
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Pull LFS files
+RUN git lfs pull || true
+
+# Start FastAPI app
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
