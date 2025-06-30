@@ -1,0 +1,33 @@
+# General
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.env
+
+# Node modules
+node_modules/
+dist/
+build/
+
+# Python virtual environments
+venv/
+env/
+
+# macOS / Linux / Windows system files
+.DS_Store
+Thumbs.db
+
+# MoviePy temp files
+*.mp3
+*.mp4
+temp-audio.*
+
+# React
+frontend/.next
+frontend/.env.local
+frontend/.cache
+
+# VS Code
+.vscode/

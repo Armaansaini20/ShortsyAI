@@ -1,0 +1,1 @@
+gemini_key='AIzaSyA4DjySLXIgXrk1tYK7LsX8nH3K6WLC3EY'
