@@ -20,9 +20,9 @@ env/
 Thumbs.db
 
 # MoviePy temp files
-*.mp3
-*.mp4
-temp-audio.*
+# *.mp3
+# *.mp4
+# temp-audio.*
 
 # React
 frontend/.next
