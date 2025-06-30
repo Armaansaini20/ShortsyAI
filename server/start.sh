@@ -1,8 +1,9 @@
 #!/bin/bash
 
-echo "🔄 Pulling Git LFS files..."
+# Install Git LFS
+apt-get update && apt-get install -y git-lfs
 git lfs install
 git lfs pull
 
-echo "🚀 Starting backend..."
+# Now run your server
 uvicorn main:app --host 0.0.0.0 --port 8000
