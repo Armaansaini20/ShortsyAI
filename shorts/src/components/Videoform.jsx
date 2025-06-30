@@ -21,7 +21,7 @@ const VideoForm = ({ setVideoUrl }) => {
     setVideoUrl(null); // Clear previous video
 
     try {
-      const response = await fetch('https://shortsyai-production-6337.up.railway.app/', {
+      const response = await fetch('https://shortsyai-production-6337.up.railway.app/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
