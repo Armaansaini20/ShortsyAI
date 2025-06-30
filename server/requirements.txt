@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+gtts
+moviepy==1.0.3
+google-generativeai
