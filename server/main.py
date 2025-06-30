@@ -65,7 +65,8 @@ async def generate_video(data: VideoRequest):
     speech.save("generated/speech.mp3")
 
     # Select random video
-    gp = random.choice(["1", "2"])
+    # gp = random.choice(["1", "2"])
+    gp="1"
     audio_clip = AudioFileClip("generated/speech.mp3")
     video_path = f"gameplay/gameplay_{gp}.mp4"
     video_clip = VideoFileClip(video_path)
@@ -120,4 +121,4 @@ async def generate_video(data: VideoRequest):
     return JSONResponse({
     "status": "success",
     "video_url": f"/generated/{title}.mp4"
-})
+    })
