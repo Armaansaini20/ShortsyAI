@@ -71,7 +71,7 @@ async def generate_video(data: VideoRequest):
     video_path = f"gameplay/gameplay_{gp}.mp4"
     video_clip = VideoFileClip(video_path)
 
-    video_duration = video_clip.duration
+    video_duration = 115
     required_duration = audio_clip.duration + 1.3
 
     if required_duration >= video_duration:
