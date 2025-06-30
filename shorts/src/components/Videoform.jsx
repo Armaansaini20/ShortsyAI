@@ -21,7 +21,7 @@ const VideoForm = ({ setVideoUrl }) => {
     setVideoUrl(null); // Clear previous video
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/generate', {
+      const response = await fetch('https://shortsyai-production-6337.up.railway.app/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -29,7 +29,7 @@ const VideoForm = ({ setVideoUrl }) => {
 
       const data = await response.json();
       if (data.video_url) {
-        const fullUrl = `http://127.0.0.1:8000${data.video_url}`;
+        const fullUrl = `https://shortsyai-production-6337.up.railway.app/${data.video_url}`;
         setVideoUrl(fullUrl);
       } else {
         alert(data.message || '❌ Error: No video URL returned');
