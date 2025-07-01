@@ -29,7 +29,7 @@ const VideoForm = ({ setVideoUrl }) => {
 
       const data = await response.json();
       if (data.video_url) {
-        const fullUrl = `https://shortsyai-production-6337.up.railway.app/${data.video_url}`;
+        const fullUrl = `https://shortsyai-production-6337.up.railway.app${data.video_url}`;
         setVideoUrl(fullUrl);
       } else {
         alert(data.message || '❌ Error: No video URL returned');
