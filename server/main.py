@@ -3,8 +3,14 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from moviepy.editor import VideoFileClip, AudioFileClip
+from moviepy.editor import (
+    VideoFileClip,
+    AudioFileClip,
+    TextClip,
+    CompositeVideoClip,
+)
 import moviepy.video.fx.crop as crop_vid
+import moviepy.config as mpy_config
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
@@ -12,11 +18,15 @@ import random
 from constant import gemini_key, eleven_key
 from elevenlabs.client import ElevenLabs
 
-load_dotenv()
+# ✅ Configure ImageMagick
+mpy_config.change_settings({
+    "IMAGEMAGICK_BINARY": r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
+})
 
+load_dotenv()
 app = FastAPI()
 
-# CORS middleware for frontend communication
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,34 +35,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve generated videos
 app.mount("/generated", StaticFiles(directory="generated"), name="generated")
 
 class VideoRequest(BaseModel):
     title: str
-    useAI: str  # "yes" or "no"
+    useAI: str
     theme: str = ""
     content: str = ""
 
-# 🔊 ElevenLabs speech generation
+# ElevenLabs speech + timestamps
 def generate_elevenlabs_speech(text: str, output_path: str):
     client = ElevenLabs(api_key=eleven_key)
-
-    audio_generator = client.text_to_speech.convert(
+    response = client.text_to_speech.convert(
         text=text,
         voice_id="JBFqnCBsd6RMkjVDRZzb",
         model_id="eleven_multilingual_v2",
         output_format="mp3_44100_128",
+        optimize_streaming_latency=0
     )
 
+    audio_stream = []
+    timestamps = []
+
+    for item in response:
+        if isinstance(item, bytes):
+            audio_stream.append(item)
+        elif isinstance(item, dict):
+            timestamps.append(item)
+
     with open(output_path, "wb") as f:
-        for chunk in audio_generator:
+        for chunk in audio_stream:
             f.write(chunk)
 
+    return timestamps
 
 @app.post("/generate")
 async def generate_video(data: VideoRequest):
-    title = data.title.strip().replace(" ", "_")  # filename safe
+    title = data.title.strip().replace(" ", "_")
     useAI = data.useAI.lower()
 
     # Step 1: Content generation
@@ -73,16 +92,14 @@ async def generate_video(data: VideoRequest):
     else:
         content = data.content
 
-    # Step 2: Speech generation
     os.makedirs("generated", exist_ok=True)
     speech_path = f"generated/speech.mp3"
 
     try:
-        generate_elevenlabs_speech(content, speech_path)
+        tts_response = generate_elevenlabs_speech(content, speech_path)
     except Exception as e:
         return JSONResponse({"status": "error", "message": f"TTS failed: {str(e)}"})
 
-    # Step 3: Video preparation
     try:
         audio_clip = AudioFileClip(speech_path)
         video_clip = VideoFileClip("gameplay/gameplay_1.mp4")
@@ -90,7 +107,7 @@ async def generate_video(data: VideoRequest):
         return JSONResponse({"status": "error", "message": f"File error: {str(e)}"})
 
     required_duration = audio_clip.duration + 1.3
-    max_video_duration = 115  # 1.55 minutes
+    max_video_duration = 115
 
     if required_duration >= max_video_duration:
         return JSONResponse({"status": "error", "message": "Speech too long for available video"})
@@ -98,9 +115,9 @@ async def generate_video(data: VideoRequest):
     start = random.uniform(0, max_video_duration - required_duration)
     video_clip = video_clip.subclip(start, start + required_duration).set_audio(audio_clip)
 
-    # Step 4: Crop to 9:16
+    # Crop to 9:16 vertical
     w, h = video_clip.size
-    target_ratio = 1080 / 1920
+    target_ratio = 9 / 16
     current_ratio = w / h
 
     if current_ratio > target_ratio:
@@ -110,10 +127,31 @@ async def generate_video(data: VideoRequest):
         new_height = int(w / target_ratio)
         video_clip = crop_vid.crop(video_clip, width=w, height=new_height, x_center=w / 2, y_center=h / 2)
 
-    # Step 5: Export
+    # Add real-time word subtitles
+    subtitle_clips = []
+    for word_data in tts_response:
+        word = word_data.get("text")
+        start_time = float(word_data.get("start", 0.0))
+        end_time = float(word_data.get("end", start_time + 0.5))
+
+        txt_clip = TextClip(
+            word,
+            fontsize=60,
+            font='Arial-Bold',
+            color='white',
+            stroke_color='black',
+            stroke_width=3,
+            size=(video_clip.w * 0.9, None),
+            method='caption'
+        ).set_start(start_time).set_end(end_time).set_position(("center", h - 200))
+
+        subtitle_clips.append(txt_clip)
+
+    final_video = CompositeVideoClip([video_clip] + subtitle_clips)
+
     out_path = f"generated/{title}.mp4"
     try:
-        video_clip.write_videofile(
+        final_video.write_videofile(
             out_path,
             codec="libx264",
             audio_codec="aac",

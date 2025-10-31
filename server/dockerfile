@@ -1,21 +1,33 @@
-# Use a minimal Python base image
-FROM python:3.10-slim
+# server/Dockerfile — production-ready for FastAPI (Gunicorn + Uvicorn workers)
+FROM python:3.11-slim
 
-# Install dependencies (like git-lfs and ffmpeg)
-RUN apt-get update && apt-get install -y git git-lfs ffmpeg && \
-    git lfs install
+# ---- system deps ----
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    build-essential \
+    ffmpeg \
+    libsndfile1 \
+ && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
-WORKDIR /app
+# ---- create non-root user and workdir ----
+RUN useradd --create-home appuser
+WORKDIR /home/appuser/app
 
-# Copy all files into the container
+# ---- copy and install python deps ----
+COPY requirements.txt ./requirements.txt
+RUN python -m pip install --upgrade pip setuptools wheel \
+ && pip install --no-cache-dir -r requirements.txt
+
+# ---- copy app code ----
 COPY . .
 
-# Install Python requirements
-RUN pip install --no-cache-dir -r requirements.txt
+# ---- permissions and switch user ----
+RUN chown -R appuser:appuser /home/appuser/app
+USER appuser
 
-# Pull LFS files
-RUN git lfs pull || true
+ENV PORT=8000
+EXPOSE 8000
 
-# Start FastAPI app
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use Gunicorn with Uvicorn workers (good for production). 
+# Adjust the module path if your app is at a different path (e.g. server.app:app).
+CMD ["sh","-c","exec gunicorn -k uvicorn.workers.UvicornWorker server.main:app -b 0.0.0.0:${PORT} --workers 2 --timeout 120"]

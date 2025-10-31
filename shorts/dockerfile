@@ -1,0 +1,26 @@
+# shorts/Dockerfile (multi-stage)
+# Stage 1: build
+FROM node:18-alpine AS build
+WORKDIR /app
+
+# Copy package files first to leverage Docker cache
+COPY package*.json ./
+# If using package-lock.json present, this will use it
+RUN npm ci --silent
+
+COPY . .
+# If your build command is `npm run build` (common), otherwise change below
+ARG BUILD_CMD="npm run build"
+RUN sh -c "$BUILD_CMD"
+
+# Stage 2: serve with nginx
+FROM nginx:stable-alpine
+# Remove default nginx website
+RUN rm -rf /usr/share/nginx/html/*
+COPY --from=build /app/dist /usr/share/nginx/html
+# If your frontend builds to /app/build (create-react-app), change the path accordingly:
+# COPY --from=build /app/build /usr/share/nginx/html
+
+# Simple nginx config: use default but expose port
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
