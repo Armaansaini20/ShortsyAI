@@ -21,15 +21,19 @@ const VideoForm = ({ setVideoUrl }) => {
     setVideoUrl(null); // Clear previous video
 
     try {
-      const response = await fetch('https://shortsyai-production-6337.up.railway.app/generate', {
+      const response = await fetch('http://localhost:8000/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-
+      // const response = await fetch('https://shortsyai-production-6337.up.railway.app/generate', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(formData),
+      // });
       const data = await response.json();
       if (data.video_url) {
-        const fullUrl = `https://shortsyai-production-6337.up.railway.app${data.video_url}`;
+        const fullUrl = `http://localhost:8000${data.video_url}`;
         setVideoUrl(fullUrl);
       } else {
         alert(data.message || '❌ Error: No video URL returned');
@@ -38,6 +42,17 @@ const VideoForm = ({ setVideoUrl }) => {
       console.error(err);
       alert('❌ Video generation failed');
     }
+    //   const data = await response.json();
+    //   if (data.video_url) {
+    //     const fullUrl = `https://shortsyai-production-6337.up.railway.app${data.video_url}`;
+    //     setVideoUrl(fullUrl);
+    //   } else {
+    //     alert(data.message || '❌ Error: No video URL returned');
+    //   }
+    // } catch (err) {
+    //   console.error(err);
+    //   alert('❌ Video generation failed');
+    // }
 
     setLoading(false);
   };

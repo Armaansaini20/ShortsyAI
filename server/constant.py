@@ -1,1 +1,2 @@
 gemini_key='AIzaSyA4DjySLXIgXrk1tYK7LsX8nH3K6WLC3EY'
+eleven_key='sk_7cb77ac60e20c8c539a1ccf48ef83cab86d95545d5e9bf7a'
